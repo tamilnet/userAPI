@@ -9,10 +9,22 @@ A simple project for JWT authentication.
 
 ## How to start webserver
 
+
+
+create .env file with a TOKEN_KEY, which can be a random string. For example
+
+```
+MONGO_URI= mongodb://localhost:27017/userDB
+TOKEN_KEY= "abcdefg"
+```
+
+Then start the node.
+
 ```
 npm install
 node app.js
 ```
+
 
 ## APIs
 
