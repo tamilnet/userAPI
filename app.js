@@ -1,9 +1,11 @@
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
-require("dotenv").config();
+
 
 
 const app = express();
@@ -36,13 +38,23 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-app.post("/register", function (req, res) {
+app.post("/register", async (req, res) => {
+
+  const {
+    user_name,
+    email,
+    password
+  } = req.body;
+  encryptedPassword = await bcrypt.hash(password, 10);
+  // const password= encryptedPassword;
+  // console.log(password);
 
   const newUser = new User({
     user_name: req.body.user_name,
     email: req.body.email,
-    password: req.body.password
+    password: encryptedPassword
   });
+
   newUser.save(function (err) {
     if (!err) {
       res.send("Successfully added a new User.");
@@ -52,30 +64,36 @@ app.post("/register", function (req, res) {
   });
 });
 
-app.post("/login", function (req, res) {
+app.post("/login", async (req, res) => {
   try {
-    User.findOne({
+    const {
+      email,
+      password
+    } = req.body;
+    const user = await User.findOne({
       email: req.body.email,
-      password: req.body.password
-    }, function (err, foundUsers) {
-      if (!foundUsers) {
-        res.send("Invalid User. Please register your details.");
-      } else {
-
-        const token = jwt.sign({
-            user_id: User._id,
-            email: User.email
-          },
-          process.env.TOKEN_KEY
-        );
-        foundUsers.token = token;
-        res.status(201).json(foundUsers);
-
-      }
     });
-  } catch (err) {
-    console.log(err);
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      const token = jwt.sign({
+          user_id: User._id,
+          email: User.email
+        },
+        process.env.TOKEN_KEY
+      );
+      user.token = token;
+      res.status(201).json(user);
+
+
+    } else {
+      res.send("Invalid User. Please register your details.");
+
+
+    }
   }
+ catch (err) {
+  console.log(err);
+}
 
 });
 
